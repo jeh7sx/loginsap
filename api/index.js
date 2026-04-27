@@ -13,33 +13,63 @@ const AUTH_HEADER = 'Basic ' + Buffer.from('developer:etecamp').toString('base64
 
 // Rota para Login (Busca por Nome)
 app.get('/api/login/:nome', async (req, res) => {
+    // try {
+    //     const nomeDigitado = req.params.nome;
+    //    // const url = `${SAP_BASE_URL}/${ENTITY_SET}?$filter=Nome eq '${nomeDigitado}'&$format=json`;
+    //     const url = `${SAP_BASE_URL}/${ENTITY_SET}?$filter=substringof('${nomeDigitado}', Nome)&$format=json`;
+    //     const response = await axios.get(url, {
+    //         headers: {
+    //             'Authorization': AUTH_HEADER,
+    //             'ngrok-skip-browser-warning': 'true'
+    //         }
+    //     });
+
+    //     const results = response.data.d.results;
+
+    //     // 1. Verifica se a lista não está vazia
+    //     // 2. Verifica se o nome retornado é EXATAMENTE o nome digitado
+    //     if (results && results.length > 0 && results[0].Nome === nomeDigitado) {
+    //         res.json(results[0]);
+    //     // Use .trim() para ignorar os espaços do SAP na hora de comparar
+    //     // if (results && results.length > 0 && results[0].Nome.trim() === nomeDigitado.trim()) {
+    //     //     res.json(results[0]);
+    //     // }
+    //     } else {
+    //         res.status(404).json({ error: 'Usuário não encontrado ou filtro inválido' });
+    //     }
+    // } catch (error) {
+    //     res.status(500).json({ error: 'Erro na conexão com SAP' });
+    // }
     try {
-        const nomeDigitado = req.params.nome;
-       // const url = `${SAP_BASE_URL}/${ENTITY_SET}?$filter=Nome eq '${nomeDigitado}'&$format=json`;
-        const url = `${SAP_BASE_URL}/${ENTITY_SET}?$filter=substringof('${nomeDigitado}', Nome)&$format=json`;
-        const response = await axios.get(url, {
-            headers: {
-                'Authorization': AUTH_HEADER,
-                'ngrok-skip-browser-warning': 'true'
-            }
-        });
-
-        const results = response.data.d.results;
-
-        // 1. Verifica se a lista não está vazia
-        // 2. Verifica se o nome retornado é EXATAMENTE o nome digitado
-        if (results && results.length > 0 && results[0].Nome === nomeDigitado) {
-            res.json(results[0]);
-        // Use .trim() para ignorar os espaços do SAP na hora de comparar
-        // if (results && results.length > 0 && results[0].Nome.trim() === nomeDigitado.trim()) {
-        //     res.json(results[0]);
-        // }
-        } else {
-            res.status(404).json({ error: 'Usuário não encontrado ou filtro inválido' });
+    const nomeDigitado = req.params.nome.toLowerCase().replace(/\s/g, ''); // Remove espaços do que foi digitado
+    
+    // 1. Buscamos a lista SEM filtro Nome para evitar o problema do 'eq'
+    const url = `${SAP_BASE_URL}/${ENTITY_SET}?$format=json`;
+    
+    const response = await axios.get(url, {
+        headers: {
+            'Authorization': AUTH_HEADER,
+            'ngrok-skip-browser-warning': 'true'
         }
-    } catch (error) {
-        res.status(500).json({ error: 'Erro na conexão com SAP' });
+    });
+
+    const results = response.data.d.results;
+
+    // 2. Procuramos o usuário na lista manualmente
+    // Isso ignora espaços do SAP e do que foi digitado
+    const usuarioEncontrado = results.find(u => {
+        const nomeSap = u.Nome.toLowerCase().replace(/\s/g, '');
+        return nomeSap === nomeDigitado;
+    });
+
+    if (usuarioEncontrado) {
+        res.json(usuarioEncontrado);
+    } else {
+        res.status(404).json({ error: 'Usuário não encontrado' });
     }
+} catch (error) {
+    res.status(500).json({ error: 'Erro interno no servidor' });
+}
 });
 // Rota para Cadastro
 app.post('/api/cadastro', async (req, res) => {
