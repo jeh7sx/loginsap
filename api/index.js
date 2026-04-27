@@ -40,46 +40,52 @@ app.get('/api/login/:nome', async (req, res) => {
 // Rota para Cadastro
 app.post('/api/cadastro', async (req, res) => {
     try {
-        // 1. Handshake para Token e Cookie
-        const tokenRes = await axios.get(SAP_BASE_URL, {
+        console.log("Iniciando tentativa de cadastro para:", req.body.Nome);
+
+        // 1. Handshake para obter Token e Cookies de Sessão
+        const handshake = await axios.get(SAP_BASE_URL, {
             headers: {
                 'Authorization': AUTH_HEADER,
-                'x-csrf-token': 'fetch', // ESSENCIAL: Avisa ao SAP que você quer um token
+                'x-csrf-token': 'fetch',
                 'ngrok-skip-browser-warning': 'true'
             }
         });
 
-        // Captura o token e OS cookies (pode vir mais de um)
-        const csrfToken = tokenRes.headers['x-csrf-token'];
-        const cookies = tokenRes.headers['set-cookie']; 
+        const csrfToken = handshake.headers['x-csrf-token'];
+        const cookies = handshake.headers['set-cookie']; // Array de cookies
 
         if (!csrfToken) {
-            console.error("SAP não retornou token CSRF");
-            return res.status(500).json({ error: 'Erro de segurança: Token não recebido' });
+            console.error("ERRO: SAP não enviou o token x-csrf-token.");
+            return res.status(500).json({ error: "Erro de segurança: Token ausente." });
         }
 
-        // 2. Envio do Cadastro
+        // 2. Envio do POST com os cookies da sessão anterior
         const response = await axios.post(`${SAP_BASE_URL}/${ENTITY_SET}`, req.body, {
             headers: {
                 'Authorization': AUTH_HEADER,
                 'x-csrf-token': csrfToken,
-                'Cookie': cookies ? cookies.join('; ') : '', // Garante que a sessão seja mantida
+                // Importante: transformar o array de cookies em uma string única separada por ';'
+                'Cookie': cookies ? cookies.map(c => c.split(';')[0]).join('; ') : '',
                 'Content-Type': 'application/json',
                 'Accept': 'application/json',
                 'ngrok-skip-browser-warning': 'true'
             }
         });
 
+        console.log("✅ Cadastro realizado com sucesso no SAP!");
         res.status(201).json(response.data.d);
+
     } catch (error) {
-        // Log detalhado para você ver o erro real no terminal do VS Code
+        // --- LOG DE ERRO DETALHADO ---
         if (error.response) {
-            console.error("Erro SAP (Detalhes):", JSON.stringify(error.response.data));
-            console.error("Status SAP:", error.response.status);
+            console.error("❌ Erro no SAP. Status:", error.response.status);
+            // Se o erro for 403, o problema é o Token ou Cookie
+            // Se for 400, o problema são os dados enviados (campos errados)
+            console.error("Detalhes do erro:", JSON.stringify(error.response.data));
         } else {
-            console.error("Erro de Rede/Configuração:", error.message);
+            console.error("❌ Erro de conexão:", error.message);
         }
-        res.status(500).json({ error: 'Erro ao cadastrar no SAP' });
+        res.status(500).json({ error: 'Erro ao cadastrar no SAP. Verifique o terminal.' });
     }
 });
 
