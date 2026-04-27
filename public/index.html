@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <title>Sistema Médico - Login SAP</title>
+    <style>
+        body { font-family: 'Segoe UI', sans-serif; background: #f0f4f8; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; }
+        .container { background: white; padding: 40px; border-radius: 15px; box-shadow: 0 10px 25px rgba(0,0,0,0.1); width: 350px; }
+        h2 { color: #005a9e; text-align: center; margin-bottom: 25px; }
+        input { width: 100%; padding: 12px; margin: 10px 0; border: 1px solid #ddd; border-radius: 8px; box-sizing: border-box; }
+        button { width: 100%; padding: 12px; background: #005a9e; color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: bold; transition: 0.3s; }
+        button:hover { background: #003e6d; }
+        .toggle { text-align: center; margin-top: 20px; font-size: 14px; color: #666; cursor: pointer; text-decoration: underline; }
+        #msg { margin-top: 20px; text-align: center; font-weight: bold; min-height: 20px; }
+        .hidden { display: none; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <div id="box-login">
+        <h2>Acesso ao Sistema</h2>
+        <input type="text" id="lNome" placeholder="Seu Nome de Usuário">
+        <input type="password" id="lPass" placeholder="Sua Senha">
+        <button onclick="logar()">Entrar</button>
+        <div class="toggle" onclick="swap()">Não tenho conta (Cadastrar)</div>
+    </div>
+
+    <div id="box-cad" class="hidden">
+        <h2>Novo Cadastro</h2>
+        <input type="text" id="cNome" placeholder="Nome Completo">
+        <input type="password" id="cPass" placeholder="Crie uma Senha">
+        <button onclick="cadastrar()">Finalizar Cadastro</button>
+        <div class="toggle" onclick="swap()">Voltar para Login</div>
+    </div>
+
+    <div id="msg"></div>
+</div>
+
+<script>
+    const msg = document.getElementById('msg');
+    
+    function swap() {
+        document.getElementById('box-login').classList.toggle('hidden');
+        document.getElementById('box-cad').classList.toggle('hidden');
+        msg.innerText = "";
+    }
+
+    async function logar() {
+        const nome = document.getElementById('lNome').value;
+        const pass = document.getElementById('lPass').value;
+        msg.style.color = "blue";
+        msg.innerText = "Verificando...";
+
+        try {
+            const res = await fetch(`/api/login/${nome}`);
+            const data = await res.json();
+            
+            if (data.Senha === pass) {
+                msg.style.color = "green";
+                msg.innerText = `Sucesso! ID: ${data.ID}`;
+               	window.location.href = "home.html";
+            } else {
+                msg.style.color = "red";
+                msg.innerText = "Senha incorreta.";
+            }
+        } catch (e) {
+            msg.style.color = "red";
+            msg.innerText = "Usuário não encontrado.";
+        }
+    }
+
+    async function cadastrar() {
+        const payload = {
+            Nome: document.getElementById('cNome').value,
+            Senha: document.getElementById('cPass').value
+        };
+
+        msg.style.color = "blue";
+        msg.innerText = "Salvando no SAP...";
+
+        try {
+            const res = await fetch('/api/cadastro', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            });
+            const data = await res.json();
+
+            if (res.ok) {
+                alert(`Cadastro realizado! Seu ID gerado no SAP é: ${data.ID}`);
+                swap();
+            } else {
+                throw new Error();
+            }
+        } catch (e) {
+            msg.style.color = "red";
+            msg.innerText = "Erro ao cadastrar.";
+        }
+    }
+</script>
+</body>
+</html>
