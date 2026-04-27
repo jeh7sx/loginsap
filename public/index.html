@@ -46,29 +46,39 @@
         msg.innerText = "";
     }
 
-    async function logar() {
-        const nome = document.getElementById('lNome').value;
-        const pass = document.getElementById('lPass').value;
-        msg.style.color = "blue";
-        msg.innerText = "Verificando...";
+  async function logar() {
+    const nome = document.getElementById('lNome').value;
+    const pass = document.getElementById('lPass').value;
+    msg.style.color = "blue";
+    msg.innerText = "Verificando...";
 
-        try {
-            const res = await fetch(`/api/login/${nome}`);
-            const data = await res.json();
-            
-            if (data.Senha === pass) {
-                msg.style.color = "green";
-                msg.innerText = `Sucesso! ID: ${data.ID}`;
-               	window.location.href = "home.html";
-            } else {
-                msg.style.color = "red";
-                msg.innerText = "Senha incorreta.";
-            }
-        } catch (e) {
+    try {
+        const res = await fetch(`/api/login/${nome}`);
+
+        // --- CORREÇÃO AQUI: Se o servidor respondeu 404, o usuário não existe ---
+        if (!res.ok) {
             msg.style.color = "red";
             msg.innerText = "Usuário não encontrado.";
+            return; // PARA a execução aqui
         }
+
+        const data = await res.json();
+        
+        // Agora que sabemos que o usuário existe (res.ok), verificamos a senha
+        if (data.Senha === pass) {
+            msg.style.color = "green";
+            msg.innerText = `Sucesso! ID: ${data.ID}`;
+            window.location.href = "home.html";
+        } else {
+            msg.style.color = "red";
+            msg.innerText = "Senha incorreta.";
+        }
+    } catch (e) {
+        // O catch só acontece se o servidor estiver desligado ou a internet cair
+        msg.style.color = "red";
+        msg.innerText = "Erro técnico na conexão.";
     }
+}
 
     async function cadastrar() {
         const payload = {
