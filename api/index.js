@@ -115,7 +115,7 @@ app.post('/api/cadastro', async (req, res) => {
         // 2. Criar o payload exatamente como o SEGW espera
         // IMPORTANTE: Verifique se no seu SEGW é 'Id' ou 'ID'. Use o que estiver lá.
         const payload = {
-            ID: "000000000", 
+            ID: "00000000", 
             Nome: Nome,
             Senha: Senha
         };
