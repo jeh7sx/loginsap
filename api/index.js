@@ -28,8 +28,12 @@ app.get('/api/login/:nome', async (req, res) => {
 
         // 1. Verifica se a lista não está vazia
         // 2. Verifica se o nome retornado é EXATAMENTE o nome digitado
-        if (results && results.length > 0 && results[0].Nome === nomeDigitado) {
+        // if (results && results.length > 0 && results[0].Nome === nomeDigitado) {
+        //     res.json(results[0]);
+        // Use .trim() para ignorar os espaços do SAP na hora de comparar
+        if (results && results.length > 0 && results[0].Nome.trim() === nomeDigitado.trim()) {
             res.json(results[0]);
+        }
         } else {
             res.status(404).json({ error: 'Usuário não encontrado ou filtro inválido' });
         }
