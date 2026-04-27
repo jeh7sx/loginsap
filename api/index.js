@@ -15,8 +15,8 @@ const AUTH_HEADER = 'Basic ' + Buffer.from('developer:etecamp').toString('base64
 app.get('/api/login/:nome', async (req, res) => {
     try {
         const nomeDigitado = req.params.nome;
-        const url = `${SAP_BASE_URL}/${ENTITY_SET}?$filter=Nome eq '${nomeDigitado}'&$format=json`;
-        
+       // const url = `${SAP_BASE_URL}/${ENTITY_SET}?$filter=Nome eq '${nomeDigitado}'&$format=json`;
+        const url = `${SAP_BASE_URL}/${ENTITY_SET}?$filter=substringof('${nomeDigitado}', Nome)&$format=json`;
         const response = await axios.get(url, {
             headers: {
                 'Authorization': AUTH_HEADER,
