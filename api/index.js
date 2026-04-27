@@ -58,7 +58,8 @@ app.post('/api/cadastro', async (req, res) => {
 				'x-csrf-token': csrfToken,
 				'Cookie': sessionCookie,
 				'Content-Type': 'application/json',
-				'Accept': 'application/json'
+				'Accept': 'application/json',
+				'ngrok-skip-browser-warning': 'true'
 			}
 		});
 		res.status(201).json(response.data.d);
