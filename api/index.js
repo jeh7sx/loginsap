@@ -140,7 +140,7 @@ app.get('/api/login/:nome', async (req, res) => {
 
 app.post('/api/cadastro', async (req, res) => {
     try {
-        // 1. Handshake para buscar o Token
+        // 1. Handshake para buscar o Token e Cookies
         const handshake = await axios.get(SAP_BASE_URL, {
             headers: {
                 'Authorization': AUTH_HEADER,
@@ -150,39 +150,34 @@ app.post('/api/cadastro', async (req, res) => {
         });
 
         const csrfToken = handshake.headers['x-csrf-token'];
-        // Pegamos os cookies EXATOS que o SAP mandou
-        const sessionCookies = handshake.headers['set-cookie']; 
+        const sessionCookies = handshake.headers['set-cookie']; // ESSENCIAL
 
-        // 2. Montamos o JSON igualzinho ao seu teste que deu certo no SAP
+        // 2. Montamos o JSON IGUAL ao seu teste que deu certo no SAP
         const payload = {
-            Id: "00000000", // Use 'Id' igual ao print do Gateway Client
+            Id: "00000000", // Use 'Id' exatamente como no print do Gateway
             Nome: req.body.Nome,
             Senha: req.body.Senha
         };
 
-        // 3. Enviamos o POST
+        // 3. Enviamos o POST repassando os Cookies
         const response = await axios.post(`${SAP_BASE_URL}/${ENTITY_SET}`, payload, {
             headers: {
                 'Authorization': AUTH_HEADER,
                 'x-csrf-token': csrfToken,
-                'Cookie': sessionCookies ? sessionCookies.join('; ') : '', // Repassa os cookies
+                'Cookie': sessionCookies ? sessionCookies.join('; ') : '', 
                 'Content-Type': 'application/json',
                 'Accept': 'application/json'
             }
         });
 
-        console.log("✅ Criado com sucesso!");
         res.status(201).json(response.data.d);
 
     } catch (error) {
-        console.error("❌ Erro no SAP:");
+        console.error("❌ Detalhes do erro no terminal:");
         if (error.response) {
-            console.error("Status:", error.response.status);
             console.error("Data:", JSON.stringify(error.response.data));
-        } else {
-            console.error(error.message);
         }
-        res.status(500).json({ error: 'Erro ao cadastrar. Verifique o log do servidor.' });
+        res.status(500).json({ error: 'Erro ao cadastrar no SAP.' });
     }
 });
 // app.listen(3000, () => console.log(`🚀 Site em http://localhost:3000`));
