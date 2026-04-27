@@ -96,51 +96,11 @@ app.get('/api/login/:nome', async (req, res) => {
 //     }
 // });
 
-// app.post('/api/cadastro', async (req, res) => {
-//     try {
-//         const { Nome, Senha } = req.body;
-
-//         // 1. Handshake para obter Token e Cookies
-//         const handshake = await axios.get(SAP_BASE_URL, {
-//             headers: {
-//                 'Authorization': AUTH_HEADER,
-//                 'x-csrf-token': 'fetch',
-//                 'ngrok-skip-browser-warning': 'true'
-//             }
-//         });
-
-//         const csrfToken = handshake.headers['x-csrf-token'];
-//         const cookies = handshake.headers['set-cookie'];
-
-//         // 2. Criar o payload exatamente como o SEGW espera
-//         // IMPORTANTE: Verifique se no seu SEGW é 'Id' ou 'ID'. Use o que estiver lá.
-//         const payload = {
-//             Id: "00000000", 
-//             Nome: Nome,
-//             Senha: Senha
-//         };
-
-//         const response = await axios.post(`${SAP_BASE_URL}/${ENTITY_SET}`, payload, {
-//             headers: {
-//                 'Authorization': AUTH_HEADER,
-//                 'x-csrf-token': csrfToken,
-//                 'Cookie': cookies ? cookies.map(c => c.split(';')[0]).join('; ') : '',
-//                 'Content-Type': 'application/json',
-//                 'Accept': 'application/json'
-//             }
-//         });
-
-//         res.status(201).json(response.data.d);
-
-//     } catch (error) {
-//         console.error("❌ Detalhes do erro no SAP:", error.response?.data || error.message);
-//         res.status(500).json({ error: 'Erro ao cadastrar no SAP' });
-//     }
-// });
-
 app.post('/api/cadastro', async (req, res) => {
     try {
-        // 1. Handshake para buscar o Token e Cookies
+        const { Nome, Senha } = req.body;
+
+        // 1. Handshake para obter Token e Cookies
         const handshake = await axios.get(SAP_BASE_URL, {
             headers: {
                 'Authorization': AUTH_HEADER,
@@ -150,21 +110,21 @@ app.post('/api/cadastro', async (req, res) => {
         });
 
         const csrfToken = handshake.headers['x-csrf-token'];
-        const sessionCookies = handshake.headers['set-cookie']; // ESSENCIAL
+        const cookies = handshake.headers['set-cookie'];
 
-        // 2. Montamos o JSON IGUAL ao seu teste que deu certo no SAP
+        // 2. Criar o payload exatamente como o SEGW espera
+        // IMPORTANTE: Verifique se no seu SEGW é 'Id' ou 'ID'. Use o que estiver lá.
         const payload = {
-            Id: "00000000", // Use 'Id' exatamente como no print do Gateway
-            Nome: req.body.Nome,
-            Senha: req.body.Senha
+            Id: "00000000", 
+            Nome: Nome,
+            Senha: Senha
         };
 
-        // 3. Enviamos o POST repassando os Cookies
         const response = await axios.post(`${SAP_BASE_URL}/${ENTITY_SET}`, payload, {
             headers: {
                 'Authorization': AUTH_HEADER,
                 'x-csrf-token': csrfToken,
-                'Cookie': sessionCookies ? sessionCookies.join('; ') : '', 
+                'Cookie': cookies ? cookies.map(c => c.split(';')[0]).join('; ') : '',
                 'Content-Type': 'application/json',
                 'Accept': 'application/json'
             }
@@ -173,12 +133,52 @@ app.post('/api/cadastro', async (req, res) => {
         res.status(201).json(response.data.d);
 
     } catch (error) {
-        console.error("❌ Detalhes do erro no terminal:");
-        if (error.response) {
-            console.error("Data:", JSON.stringify(error.response.data));
-        }
-        res.status(500).json({ error: 'Erro ao cadastrar no SAP.' });
+        console.error("❌ Detalhes do erro no SAP:", error.response?.data || error.message);
+        res.status(500).json({ error: 'Erro ao cadastrar no SAP' });
     }
 });
+
+// app.post('/api/cadastro', async (req, res) => {
+//     try {
+//         // 1. Handshake para buscar o Token e Cookies
+//         const handshake = await axios.get(SAP_BASE_URL, {
+//             headers: {
+//                 'Authorization': AUTH_HEADER,
+//                 'x-csrf-token': 'fetch',
+//                 'ngrok-skip-browser-warning': 'true'
+//             }
+//         });
+
+//         const csrfToken = handshake.headers['x-csrf-token'];
+//         const sessionCookies = handshake.headers['set-cookie']; // ESSENCIAL
+
+//         // 2. Montamos o JSON IGUAL ao seu teste que deu certo no SAP
+//         const payload = {
+//             Id: "00000000", // Use 'Id' exatamente como no print do Gateway
+//             Nome: req.body.Nome,
+//             Senha: req.body.Senha
+//         };
+
+//         // 3. Enviamos o POST repassando os Cookies
+//         const response = await axios.post(`${SAP_BASE_URL}/${ENTITY_SET}`, payload, {
+//             headers: {
+//                 'Authorization': AUTH_HEADER,
+//                 'x-csrf-token': csrfToken,
+//                 'Cookie': sessionCookies ? sessionCookies.join('; ') : '', 
+//                 'Content-Type': 'application/json',
+//                 'Accept': 'application/json'
+//             }
+//         });
+
+//         res.status(201).json(response.data.d);
+
+//     } catch (error) {
+//         console.error("❌ Detalhes do erro no terminal:");
+//         if (error.response) {
+//             console.error("Data:", JSON.stringify(error.response.data));
+//         }
+//         res.status(500).json({ error: 'Erro ao cadastrar no SAP.' });
+//     }
+// });
 // app.listen(3000, () => console.log(`🚀 Site em http://localhost:3000`));
 module.exports = app;
