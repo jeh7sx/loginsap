@@ -96,9 +96,54 @@ app.get('/api/login/:nome', async (req, res) => {
 //     }
 // });
 
+// app.post('/api/cadastro', async (req, res) => {
+//     try {
+//         // 1. Handshake para buscar o Token e a Sessão (Cookies)
+//         const handshake = await axios.get(SAP_BASE_URL, {
+//             headers: {
+//                 'Authorization': AUTH_HEADER,
+//                 'x-csrf-token': 'fetch',
+//                 'ngrok-skip-browser-warning': 'true'
+//             }
+//         });
+
+//         // Pegamos o token e TODOS os cookies retornados
+//         const csrfToken = handshake.headers['x-csrf-token'];
+//         const cookies = handshake.headers['set-cookie']; 
+
+//         // 2. Montamos o payload exatamente como no seu teste de sucesso
+//         const payload = {
+//             Id: "00000000", // Conforme seu teste no Gateway Client
+//             Nome: req.body.Nome,
+//             Senha: req.body.Senha
+//         };
+
+//         // 3. Enviamos o POST com a "assinatura" completa (Token + Cookies)
+//         const response = await axios.post(`${SAP_BASE_URL}/${ENTITY_SET}`, payload, {
+//             headers: {
+//                 'Authorization': AUTH_HEADER,
+//                 'x-csrf-token': csrfToken,
+//                 'Cookie': cookies ? cookies.join('; ') : '', // Isso mantém a sessão viva
+//                 'Content-Type': 'application/json',
+//                 'Accept': 'application/json'
+//             }
+//         });
+
+//         res.status(201).json(response.data.d);
+
+//     } catch (error) {
+//         // Log para você ver na Vercel o motivo exato do 500
+//         if (error.response) {
+//             console.error("Status do SAP:", error.response.status);
+//             console.error("Erro detalhado:", JSON.stringify(error.response.data));
+//         }
+//         res.status(500).json({ error: 'Erro interno ao comunicar com o SAP' });
+//     }
+// });
+
 app.post('/api/cadastro', async (req, res) => {
     try {
-        // 1. Handshake para buscar o Token e a Sessão (Cookies)
+        // 1. Handshake (Token e Cookies)
         const handshake = await axios.get(SAP_BASE_URL, {
             headers: {
                 'Authorization': AUTH_HEADER,
@@ -107,37 +152,38 @@ app.post('/api/cadastro', async (req, res) => {
             }
         });
 
-        // Pegamos o token e TODOS os cookies retornados
         const csrfToken = handshake.headers['x-csrf-token'];
-        const cookies = handshake.headers['set-cookie']; 
+        const cookies = handshake.headers['set-cookie'];
 
-        // 2. Montamos o payload exatamente como no seu teste de sucesso
+        // 2. Payload - EXATAMENTE como o SAP quer (Case Sensitive)
         const payload = {
-            Id: "00000000", // Conforme seu teste no Gateway Client
-            Nome: req.body.Nome,
-            Senha: req.body.Senha
+            "Id": "00000000",
+            "Nome": String(req.body.Nome),
+            "Senha": String(req.body.Senha)
         };
 
-        // 3. Enviamos o POST com a "assinatura" completa (Token + Cookies)
+        // 3. O POST com um header extra de segurança
         const response = await axios.post(`${SAP_BASE_URL}/${ENTITY_SET}`, payload, {
             headers: {
                 'Authorization': AUTH_HEADER,
                 'x-csrf-token': csrfToken,
-                'Cookie': cookies ? cookies.join('; ') : '', // Isso mantém a sessão viva
+                'Cookie': cookies ? cookies.join('; ') : '',
                 'Content-Type': 'application/json',
-                'Accept': 'application/json'
+                'Accept': 'application/json',
+                'X-Requested-With': 'XMLHttpRequest' // Header extra para evitar bloqueios
             }
         });
 
         res.status(201).json(response.data.d);
 
     } catch (error) {
-        // Log para você ver na Vercel o motivo exato do 500
+        // ESSENCIAL: Se der 500, esse log abaixo vai te salvar
         if (error.response) {
-            console.error("Status do SAP:", error.response.status);
-            console.error("Erro detalhado:", JSON.stringify(error.response.data));
+            console.error("STATUS SAP:", error.response.status);
+            // Aqui o SAP explica o porquê do 500 (pode ser formato de número, etc)
+            console.error("DETALHE DO ERRO:", JSON.stringify(error.response.data));
         }
-        res.status(500).json({ error: 'Erro interno ao comunicar com o SAP' });
+        res.status(500).json({ error: 'Erro no servidor SAP' });
     }
 });
 // app.listen(3000, () => console.log(`🚀 Site em http://localhost:3000`));
