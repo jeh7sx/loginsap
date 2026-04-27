@@ -13,29 +13,30 @@ const AUTH_HEADER = 'Basic ' + Buffer.from('developer:etecamp').toString('base64
 
 // Rota para Login (Busca por Nome)
 app.get('/api/login/:nome', async (req, res) => {
-	try {
-		// Usamos filter para buscar pelo nome exato
-		const url = `${SAP_BASE_URL}/${ENTITY_SET}?$filter=Nome eq '${req.params.nome}'&$format=json`;
-		const response = await axios.get(url, {
-			// headers: { 'Authorization': AUTH_HEADER }
-			headers: {
-				'Authorization': AUTH_HEADER,
-				'ngrok-skip-browser-warning': 'true' // Isso pula a tela de aviso do ngrok
-			}
-		});
+    try {
+        const nomeDigitado = req.params.nome;
+        const url = `${SAP_BASE_URL}/${ENTITY_SET}?$filter=Nome eq '${nomeDigitado}'&$format=json`;
+        
+        const response = await axios.get(url, {
+            headers: {
+                'Authorization': AUTH_HEADER,
+                'ngrok-skip-browser-warning': 'true'
+            }
+        });
 
-		// O OData com filter retorna uma lista (results)
-		const user = response.data.d.results[0];
-		if (user) {
-			res.json(user);
-		} else {
-			res.status(404).json({ error: 'Usuário não encontrado' });
-		}
-	} catch (error) {
-		res.status(500).json({ error: 'Erro na conexão com SAP' });
-	}
+        const results = response.data.d.results;
+
+        // 1. Verifica se a lista não está vazia
+        // 2. Verifica se o nome retornado é EXATAMENTE o nome digitado
+        if (results && results.length > 0 && results[0].Nome === nomeDigitado) {
+            res.json(results[0]);
+        } else {
+            res.status(404).json({ error: 'Usuário não encontrado ou filtro inválido' });
+        }
+    } catch (error) {
+        res.status(500).json({ error: 'Erro na conexão com SAP' });
+    }
 });
-
 // Rota para Cadastro
 app.post('/api/cadastro', async (req, res) => {
     try {
