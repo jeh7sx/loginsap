@@ -97,10 +97,16 @@
             });
             const data = await res.json();
 
+            // if (res.ok) {
+            //     alert(`Cadastro realizado! Seu ID gerado no SAP é: ${data.ID}`);
+            //     swap();
+            // }
             if (res.ok) {
-                alert(`Cadastro realizado! Seu ID gerado no SAP é: ${data.ID}`);
+                // Tente console.log(data) para ver se o ID veio maiúsculo ou minúsculo
+                alert(`Cadastro realizado! ID gerado: ${data.ID || data.Id}`);
                 swap();
-            } else {
+            }
+            else {
                 throw new Error();
             }
         } catch (e) {
