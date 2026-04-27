@@ -158,8 +158,8 @@ app.post('/api/cadastro', async (req, res) => {
         // 2. Payload - EXATAMENTE como o SAP quer (Case Sensitive)
         const payload = {
             "Id": "00000000",
-            "Nome": String(req.body.Nome),
-            "Senha": String(req.body.Senha)
+            "Nome": String(req.body.Nome).trim(),
+            "Senha": String(req.body.Senha).trim()
         };
 
         // 3. O POST com um header extra de segurança
@@ -183,7 +183,7 @@ app.post('/api/cadastro', async (req, res) => {
             // Aqui o SAP explica o porquê do 500 (pode ser formato de número, etc)
             console.error("DETALHE DO ERRO:", JSON.stringify(error.response.data));
         }
-        res.status(500).json({ error: 'Erro no servidor SAP' });
+        res.status(500).json({ error: 'Erro no servidor SAP2' });
     }
 });
 // app.listen(3000, () => console.log(`🚀 Site em http://localhost:3000`));
