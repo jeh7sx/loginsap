@@ -46,43 +46,39 @@
         msg.innerText = "";
     }
 
-  async function logar() {
-    const nome = document.getElementById('lNome').value;
-    const pass = document.getElementById('lPass').value;
-    msg.style.color = "blue";
-    msg.innerText = "Verificando...";
+    async function logar() {
+        const nome = document.getElementById('lNome').value;
+        const pass = document.getElementById('lPass').value;
+        msg.style.color = "blue";
+        msg.innerText = "Verificando...";
 
-    try {
-        const res = await fetch(`/api/login/${nome}`);
+        try {
+            const res = await fetch(`/api/login/${nome}`);
+            if (!res.ok) {
+                msg.style.color = "red";
+                msg.innerText = "Usuário não encontrado.";
+                return;
+            }
 
-        // --- CORREÇÃO AQUI: Se o servidor respondeu 404, o usuário não existe ---
-        if (!res.ok) {
+            const data = await res.json();
+            if (data.Senha.trim() === pass.trim()) {
+                msg.style.color = "green";
+                msg.innerText = "Sucesso!";
+                window.location.href = "home.html";
+            } else {
+                msg.style.color = "red";
+                msg.innerText = "Senha incorreta.";
+            }
+        } catch (e) {
             msg.style.color = "red";
-            msg.innerText = "Usuário não encontrado.";
-            return; // PARA a execução aqui
+            msg.innerText = "Erro na conexão.";
         }
-
-        const data = await res.json();
-        
-        // Agora que sabemos que o usuário existe (res.ok), verificamos a senha
-        if (data.Senha === pass) {
-            msg.style.color = "green";
-            msg.innerText = `Sucesso! ID: ${data.ID}`;
-            window.location.href = "home.html";
-        } else {
-            msg.style.color = "red";
-            msg.innerText = "Senha incorreta.";
-        }
-    } catch (e) {
-        // O catch só acontece se o servidor estiver desligado ou a internet cair
-        msg.style.color = "red";
-        msg.innerText = "Erro técnico na conexão.";
     }
-}
 
     async function cadastrar() {
+        // CORREÇÃO DA LINHA 85: Payload limpo e sem erros de vírgula
         const payload = {
-            Id: document.getElementById('cNome').value,, 
+            Id: "00000000",
             Nome: document.getElementById('cNome').value,
             Senha: document.getElementById('cPass').value
         };
@@ -96,23 +92,19 @@
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(payload)
             });
-            const data = await res.json();
 
             if (res.ok) {
-                alert(`Cadastro realizado! Seu ID gerado no SAP é: ${data.Id}`);
+                const data = await res.json();
+                alert("Cadastro realizado com sucesso!");
                 swap();
-            }
-            // if (res.ok) {
-            //     // Tente console.log(data) para ver se o ID veio maiúsculo ou minúsculo
-            //     alert(`Cadastro realizado! ID gerado: ${data.ID || data.Id}`);
-            //     swap();
-            // }
-            else {
-                throw new Error();
+            } else {
+                const errorData = await res.json();
+                msg.style.color = "red";
+                msg.innerText = "Erro: " + (errorData.error || "Falha no SAP");
             }
         } catch (e) {
             msg.style.color = "red";
-            msg.innerText = "Erro ao cadastrar.";
+            msg.innerText = "Erro técnico ao cadastrar.";
         }
     }
 </script>
