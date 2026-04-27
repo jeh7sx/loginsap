@@ -28,8 +28,9 @@
 
     <div id="box-cad" class="hidden">
         <h2>Novo Cadastro</h2>
-        <input type="text" id="cNome" placeholder="Nome Completo">
-        <input type="password" id="cPass" placeholder="Crie uma Senha">
+        <input type="number" id="cId" placeholder="ID (8 dígitos)">
+        <input type="text" id="cNome" placeholder="Seu Nome">
+        <input type="password" id="cPass" placeholder="Sua Senha">
         <button onclick="cadastrar()">Finalizar Cadastro</button>
         <div class="toggle" onclick="swap()">Voltar para Login</div>
     </div>
@@ -77,8 +78,8 @@
 
     async function cadastrar() {
         // CORREÇÃO DA LINHA 85: Payload limpo e sem erros de vírgula
-        const payload = {
-            Id: "00000000",
+       const payload = {
+            Id: document.getElementById('cId').value.padStart(8, '0'), // Garante 8 dígitos
             Nome: document.getElementById('cNome').value,
             Senha: document.getElementById('cPass').value
         };
