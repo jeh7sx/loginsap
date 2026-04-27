@@ -96,53 +96,9 @@ app.get('/api/login/:nome', async (req, res) => {
 //     }
 // });
 
-// app.post('/api/cadastro', async (req, res) => {
-//     try {
-//         const { Nome, Senha } = req.body;
-
-//         // 1. Handshake para obter Token e Cookies
-//         const handshake = await axios.get(SAP_BASE_URL, {
-//             headers: {
-//                 'Authorization': AUTH_HEADER,
-//                 'x-csrf-token': 'fetch',
-//                 'ngrok-skip-browser-warning': 'true'
-//             }
-//         });
-
-//         const csrfToken = handshake.headers['x-csrf-token'];
-//         const cookies = handshake.headers['set-cookie'];
-
-//         // 2. Criar o payload exatamente como o SEGW espera
-//         // IMPORTANTE: Verifique se no seu SEGW é 'Id' ou 'ID'. Use o que estiver lá.
-//         const payload = {
-//             Id: "00000000", 
-//             Nome: Nome,
-//             Senha: Senha
-//         };
-
-//         const response = await axios.post(`${SAP_BASE_URL}/${ENTITY_SET}`, payload, {
-//             headers: {
-//                 'Authorization': AUTH_HEADER,
-//                 'x-csrf-token': csrfToken,
-//                 'Cookie': cookies ? cookies.map(c => c.split(';')[0]).join('; ') : '',
-//                 'Content-Type': 'application/json',
-//                 'Accept': 'application/json'
-//             }
-//         });
-
-//         res.status(201).json(response.data.d);
-
-//     } catch (error) {
-//         console.error("❌ Detalhes do erro no SAP:", error.response?.data || error.message);
-//         res.status(500).json({ error: 'Erro ao cadastrar no SAP' });
-//     }
-// });
-
 app.post('/api/cadastro', async (req, res) => {
     try {
-        console.log("Iniciando cadastro para:", req.body.Nome);
-
-        // 1. Handshake para buscar o Token e os Cookies de Sessão
+        // 1. Handshake para buscar o Token e a Sessão (Cookies)
         const handshake = await axios.get(SAP_BASE_URL, {
             headers: {
                 'Authorization': AUTH_HEADER,
@@ -151,41 +107,37 @@ app.post('/api/cadastro', async (req, res) => {
             }
         });
 
+        // Pegamos o token e TODOS os cookies retornados
         const csrfToken = handshake.headers['x-csrf-token'];
-        // O SAP exige que você devolva os cookies recebidos no handshake
         const cookies = handshake.headers['set-cookie']; 
 
-        // 2. Prepara o Payload (Exatamente como o seu teste de sucesso no SAP)
+        // 2. Montamos o payload exatamente como no seu teste de sucesso
         const payload = {
-            Id: "00000000", 
+            Id: "00000000", // Conforme seu teste no Gateway Client
             Nome: req.body.Nome,
             Senha: req.body.Senha
         };
 
-        // 3. Envio do POST com o Token E os Cookies
+        // 3. Enviamos o POST com a "assinatura" completa (Token + Cookies)
         const response = await axios.post(`${SAP_BASE_URL}/${ENTITY_SET}`, payload, {
             headers: {
                 'Authorization': AUTH_HEADER,
                 'x-csrf-token': csrfToken,
-                'Cookie': cookies ? cookies.join('; ') : '', 
+                'Cookie': cookies ? cookies.join('; ') : '', // Isso mantém a sessão viva
                 'Content-Type': 'application/json',
                 'Accept': 'application/json'
             }
         });
 
-        console.log("✅ Cadastro realizado com sucesso!");
         res.status(201).json(response.data.d);
 
     } catch (error) {
-        console.error("❌ Erro no Cadastro:");
+        // Log para você ver na Vercel o motivo exato do 500
         if (error.response) {
-            // Isso vai te mostrar no terminal exatamente por que o SAP recusou
-            console.error("Status SAP:", error.response.status);
-            console.error("Mensagem SAP:", JSON.stringify(error.response.data));
-        } else {
-            console.error("Erro de rede:", error.message);
+            console.error("Status do SAP:", error.response.status);
+            console.error("Erro detalhado:", JSON.stringify(error.response.data));
         }
-        res.status(500).json({ error: 'Erro ao salvar no SAP' });
+        res.status(500).json({ error: 'Erro interno ao comunicar com o SAP' });
     }
 });
 // app.listen(3000, () => console.log(`🚀 Site em http://localhost:3000`));
