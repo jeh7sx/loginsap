@@ -157,7 +157,7 @@ app.post('/api/cadastro', async (req, res) => {
 
         // 2. Payload - EXATAMENTE como o SAP quer (Case Sensitive)
        const payload = {
-            Id: String(req.body.Id), // O ID digitado pelo usuário
+            Id: req.body.Id, // O ID digitado pelo usuário
             Nome: req.body.Nome,
             Senha: req.body.Senha
         };
