@@ -156,10 +156,10 @@ app.post('/api/cadastro', async (req, res) => {
         const cookies = handshake.headers['set-cookie'];
 
         // 2. Payload - EXATAMENTE como o SAP quer (Case Sensitive)
-        const payload = {
-            "Id": "00000000",
-            "Nome": String(req.body.Nome).trim(),
-            "Senha": String(req.body.Senha).trim()
+       const payload = {
+            Id: String(req.body.Id), // O ID digitado pelo usuário
+            Nome: req.body.Nome,
+            Senha: req.body.Senha
         };
 
         // 3. O POST com um header extra de segurança
