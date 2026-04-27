@@ -96,11 +96,51 @@ app.get('/api/login/:nome', async (req, res) => {
 //     }
 // });
 
+// app.post('/api/cadastro', async (req, res) => {
+//     try {
+//         const { Nome, Senha } = req.body;
+
+//         // 1. Handshake para obter Token e Cookies
+//         const handshake = await axios.get(SAP_BASE_URL, {
+//             headers: {
+//                 'Authorization': AUTH_HEADER,
+//                 'x-csrf-token': 'fetch',
+//                 'ngrok-skip-browser-warning': 'true'
+//             }
+//         });
+
+//         const csrfToken = handshake.headers['x-csrf-token'];
+//         const cookies = handshake.headers['set-cookie'];
+
+//         // 2. Criar o payload exatamente como o SEGW espera
+//         // IMPORTANTE: Verifique se no seu SEGW é 'Id' ou 'ID'. Use o que estiver lá.
+//         const payload = {
+//             Id: "00000000", 
+//             Nome: Nome,
+//             Senha: Senha
+//         };
+
+//         const response = await axios.post(`${SAP_BASE_URL}/${ENTITY_SET}`, payload, {
+//             headers: {
+//                 'Authorization': AUTH_HEADER,
+//                 'x-csrf-token': csrfToken,
+//                 'Cookie': cookies ? cookies.map(c => c.split(';')[0]).join('; ') : '',
+//                 'Content-Type': 'application/json',
+//                 'Accept': 'application/json'
+//             }
+//         });
+
+//         res.status(201).json(response.data.d);
+
+//     } catch (error) {
+//         console.error("❌ Detalhes do erro no SAP:", error.response?.data || error.message);
+//         res.status(500).json({ error: 'Erro ao cadastrar no SAP' });
+//     }
+// });
+
 app.post('/api/cadastro', async (req, res) => {
     try {
-        const { Nome, Senha } = req.body;
-
-        // 1. Handshake para obter Token e Cookies
+        // 1. Handshake para buscar o Token
         const handshake = await axios.get(SAP_BASE_URL, {
             headers: {
                 'Authorization': AUTH_HEADER,
@@ -110,33 +150,40 @@ app.post('/api/cadastro', async (req, res) => {
         });
 
         const csrfToken = handshake.headers['x-csrf-token'];
-        const cookies = handshake.headers['set-cookie'];
+        // Pegamos os cookies EXATOS que o SAP mandou
+        const sessionCookies = handshake.headers['set-cookie']; 
 
-        // 2. Criar o payload exatamente como o SEGW espera
-        // IMPORTANTE: Verifique se no seu SEGW é 'Id' ou 'ID'. Use o que estiver lá.
+        // 2. Montamos o JSON igualzinho ao seu teste que deu certo no SAP
         const payload = {
-            Id: "00000000", 
-            Nome: Nome,
-            Senha: Senha
+            Id: "00000000", // Use 'Id' igual ao print do Gateway Client
+            Nome: req.body.Nome,
+            Senha: req.body.Senha
         };
 
+        // 3. Enviamos o POST
         const response = await axios.post(`${SAP_BASE_URL}/${ENTITY_SET}`, payload, {
             headers: {
                 'Authorization': AUTH_HEADER,
                 'x-csrf-token': csrfToken,
-                'Cookie': cookies ? cookies.map(c => c.split(';')[0]).join('; ') : '',
+                'Cookie': sessionCookies ? sessionCookies.join('; ') : '', // Repassa os cookies
                 'Content-Type': 'application/json',
                 'Accept': 'application/json'
             }
         });
 
+        console.log("✅ Criado com sucesso!");
         res.status(201).json(response.data.d);
 
     } catch (error) {
-        console.error("❌ Detalhes do erro no SAP:", error.response?.data || error.message);
-        res.status(500).json({ error: 'Erro ao cadastrar no SAP' });
+        console.error("❌ Erro no SAP:");
+        if (error.response) {
+            console.error("Status:", error.response.status);
+            console.error("Data:", JSON.stringify(error.response.data));
+        } else {
+            console.error(error.message);
+        }
+        res.status(500).json({ error: 'Erro ao cadastrar. Verifique o log do servidor.' });
     }
 });
-
 // app.listen(3000, () => console.log(`🚀 Site em http://localhost:3000`));
 module.exports = app;
