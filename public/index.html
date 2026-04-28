@@ -28,6 +28,8 @@
 
     <div id="box-cad" class="hidden">
         <h2>Novo Cadastro</h2>
+        <input type="text" id="cCpf" placeholder="CPF">
+        <input type="email" id="cEmail" placeholder="Email">
         <input type="text" id="cNome" placeholder="Seu Nome">
         <input type="password" id="cPass" placeholder="Sua Senha">
         <button onclick="cadastrar()">Finalizar Cadastro</button>
@@ -78,6 +80,8 @@
    async function cadastrar() {
     const payload = {
         Id: gerarId(),
+        Cpf: document.getElementById('cCpf').value,
+        Email: document.getElementById('cEmail').value,
         Nome: document.getElementById('cNome').value,
         Senha: document.getElementById('cPass').value
     };
