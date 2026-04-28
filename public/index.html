@@ -77,6 +77,7 @@
 
    async function cadastrar() {
     const payload = {
+        Id: gerarId(),
         Nome: document.getElementById('cNome').value,
         Senha: document.getElementById('cPass').value
     };
@@ -97,11 +98,23 @@
             alert(`Sucesso! O sistema gerou o ID: ${data.Id}`);
             swap();
         } else {
-            msg.innerText = "Erro: " + data.error;
+            msg.style.color = "red";
+
+            if (typeof data.error === "object") {
+                msg.innerText = "Erro: " + (data.error?.message?.value || JSON.stringify(data.error));
+            } else {
+                msg.innerText = "Erro: " + data.error;
+            }
         }
+
     } catch (e) {
+        msg.style.color = "red";
         msg.innerText = "Erro na comunicação.";
     }
+}
+    function gerarId() {
+    const numero = Math.floor(Math.random() * 100000000);
+    return numero.toString().padStart(8, '0');
 }
 </script>
 </body>
