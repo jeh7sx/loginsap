@@ -119,127 +119,110 @@
 </div>
 
 <script>
-    const msg = document.getElementById('msg');
+const msg = document.getElementById('msg');
 
-    function swap() {
-        document.getElementById('box-login').classList.toggle('hidden');
-        document.getElementById('box-cad').classList.toggle('hidden');
-        msg.innerText = "";
+function swap() {
+    document.getElementById('box-login').classList.toggle('hidden');
+    document.getElementById('box-cad').classList.toggle('hidden');
+    msg.innerText = "";
+}
+
+// CPF somente números
+document.getElementById('cCpf').addEventListener('input', function (e) {
+    let valor = e.target.value.replace(/\D/g, '');
+    if (valor.length > 11) valor = valor.slice(0, 11);
+    e.target.value = valor;
+});
+
+function validarCadastro(cpf, email, nome, senha) {
+    if (!cpf || !email || !nome || !senha) return "Preencha todos os campos.";
+    if (cpf.length !== 11) return "CPF deve ter 11 números.";
+
+    const senhaRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[\W_]).{6,}$/;
+    if (!senhaRegex.test(senha)) {
+        return "Senha fraca.";
     }
 
-    // CPF máscara (somente números)
-    document.getElementById('cCpf').addEventListener('input', function (e) {
-        let valor = e.target.value.replace(/\D/g, '');
-        if (valor.length > 11) valor = valor.slice(0, 11);
-        e.target.value = valor;
-    });
+    return null;
+}
 
-    function validarCadastro(cpf, email, nome, senha) {
-        if (!cpf || !email || !nome || !senha) {
-            return "Preencha todos os campos.";
-        }
+async function cadastrar() {
+    const cpf = cCpf.value;
+    const email = cEmail.value;
+    const nome = cNome.value;
+    const senha = cPass.value;
 
-        if (cpf.length !== 11) {
-            return "CPF deve ter 11 números.";
-        }
+    const erro = validarCadastro(cpf, email, nome, senha);
 
-        const senhaRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[\W_]).{6,}$/;
-
-        if (!senhaRegex.test(senha)) {
-            return "Senha fraca. Use maiúscula, minúscula, número e especial.";
-        }
-
-        return null;
+    if (erro) {
+        msg.style.color = "red";
+        msg.innerText = erro;
+        return;
     }
 
-    async function cadastrar() {
-        const cpf = document.getElementById('cCpf').value;
-        const email = document.getElementById('cEmail').value;
-        const nome = document.getElementById('cNome').value;
-        const senha = document.getElementById('cPass').value;
+    const payload = { Cpf: cpf, Email: email, Nome: nome, Senha: senha };
 
-        const erro = validarCadastro(cpf, email, nome, senha);
+    msg.style.color = "blue";
+    msg.innerText = "Cadastrando...";
 
-        if (erro) {
+    try {
+        const res = await fetch('/api/cadastro', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify(payload)
+        });
+
+        const data = await res.json();
+
+        if (res.ok) {
+            alert("Cadastro realizado!");
+            swap();
+        } else {
             msg.style.color = "red";
-            msg.innerText = erro;
-            return;
+            msg.innerText = data.error || "Erro ao cadastrar";
         }
 
-        const payload = {
-            Cpf: cpf,
-            Email: email,
-            Nome: nome,
-            Senha: senha
-        };
+    } catch {
+        msg.style.color = "red";
+        msg.innerText = "Erro na comunicação.";
+    }
+}
 
-        msg.style.color = "blue";
-        msg.innerText = "Cadastrando...";
+async function logar() {
+    const login = lLogin.value;
+    const senha = lPass.value;
 
-        try {
-            const res = await fetch('/api/cadastro', {
-                method: 'POST',
-                headers: {'Content-Type': 'application/json'},
-                body: JSON.stringify(payload)
-            });
-
-            const data = await res.json();
-
-            if (res.ok) {
-                alert("Cadastro realizado com sucesso!");
-                swap();
-            } else {
-                msg.style.color = "red";
-                msg.innerText = data.error?.message?.value || JSON.stringify(data.error);
-            }
-
-        } catch {
-            msg.style.color = "red";
-            msg.innerText = "Erro na comunicação.";
-        }
+    if (!login || !senha) {
+        msg.style.color = "red";
+        msg.innerText = "Preencha todos os campos.";
+        return;
     }
 
-    async function logar() {
-        const login = document.getElementById('lLogin').value;
-        const senha = document.getElementById('lPass').value;
+    msg.style.color = "blue";
+    msg.innerText = "Entrando...";
 
-        if (!login || !senha) {
+    try {
+        const res = await fetch('/api/login', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({ login, senha })
+        });
+
+        const data = await res.json();
+
+        if (res.ok) {
+            localStorage.setItem("usuario", JSON.stringify(data));
+            window.location.href = "home.html";
+        } else {
             msg.style.color = "red";
-            msg.innerText = "Preencha todos os campos.";
-            return;
+            msg.innerText = data.error;
         }
 
-        msg.style.color = "blue";
-        msg.innerText = "Verificando...";
-
-        try {
-            const res = await fetch(`/api/login/${login}`);
-            const data = await res.json();
-
-            if (!res.ok) {
-                msg.style.color = "red";
-                msg.innerText = "Usuário não encontrado.";
-                return;
-            }
-
-           if (data.Senha.trim() === senha.trim()) {
-                msg.style.color = "green";
-                msg.innerText = "Login realizado!";
-            
-                // 💾 salva usuário
-                localStorage.setItem("usuario", JSON.stringify(data));
-            
-                window.location.href = "home.html";
-            }else {
-                msg.style.color = "red";
-                msg.innerText = "Senha incorreta.";
-            }
-
-        } catch {
-            msg.style.color = "red";
-            msg.innerText = "Erro na conexão.";
-        }
+    } catch {
+        msg.style.color = "red";
+        msg.innerText = "Erro na conexão.";
     }
+}
 </script>
 
 </body>
