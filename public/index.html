@@ -76,38 +76,34 @@
         }
     }
 
-    async function cadastrar() {
-        // CORREÇÃO DA LINHA 85: Payload limpo e sem erros de vírgula
-       const payload = {
-            Id: document.getElementById('cId').value.padStart(8, '0'), // Garante 8 dígitos
-            Nome: document.getElementById('cNome').value,
-            Senha: document.getElementById('cPass').value
-        };
+   async function cadastrar() {
+    const payload = {
+        Nome: document.getElementById('cNome').value,
+        Senha: document.getElementById('cPass').value
+    };
 
-        msg.style.color = "blue";
-        msg.innerText = "Salvando no SAP...";
+    msg.style.color = "blue";
+    msg.innerText = "Gerando ID e Salvando...";
 
-        try {
-            const res = await fetch('/api/cadastro', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(payload)
-            });
+    try {
+        const res = await fetch('/api/cadastro', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+        });
 
-            if (res.ok) {
-                const data = await res.json();
-                alert("Cadastro realizado com sucesso!");
-                swap();
-            } else {
-                const errorData = await res.json();
-                msg.style.color = "red";
-                msg.innerText = "Erro: " + (errorData.error || "Falha no SAP");
-            }
-        } catch (e) {
-            msg.style.color = "red";
-            msg.innerText = "Erro técnico ao cadastrar.";
+        const data = await res.json();
+
+        if (res.ok) {
+            alert(`Sucesso! O sistema gerou o ID: ${data.Id}`);
+            swap();
+        } else {
+            msg.innerText = "Erro: " + data.error;
         }
+    } catch (e) {
+        msg.innerText = "Erro na comunicação.";
     }
+}
 </script>
 </body>
 </html>
