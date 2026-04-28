@@ -222,11 +222,15 @@
                 return;
             }
 
-            if (data.Senha.trim() === senha.trim()) {
+           if (data.Senha.trim() === senha.trim()) {
                 msg.style.color = "green";
                 msg.innerText = "Login realizado!";
+            
+                // 💾 salva usuário
+                localStorage.setItem("usuario", JSON.stringify(data));
+            
                 window.location.href = "home.html";
-            } else {
+            }else {
                 msg.style.color = "red";
                 msg.innerText = "Senha incorreta.";
             }
