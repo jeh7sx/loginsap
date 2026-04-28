@@ -48,11 +48,16 @@ app.get('/api/login/:nome', async (req, res) => {
 // Rota para Cadastro
 app.post('/api/cadastro', async (req, res) => {
     try {
-        // 1. BUSCAR O PRÓXIMO ID (Lógica Automática)
+       console.log("Tentando conectar ao SAP em:", SAP_BASE_URL);
+        console.log("Usando Header:", AUTH_HEADER);
+
+        // 1. BUSCAR O PRÓXIMO ID
         const buscaRes = await axios.get(`${SAP_BASE_URL}/${ENTITY_SET}?$format=json`, {
-            headers: { 'Authorization': AUTH_HEADER, 'ngrok-skip-browser-warning': 'true' }
+            headers: { 
+                'Authorization': AUTH_HEADER, 
+                'ngrok-skip-browser-warning': 'true' 
+            }
         });
-        
         const usuarios = buscaRes.data.d.results;
         let maiorId = 0;
         
