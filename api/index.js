@@ -48,8 +48,8 @@ app.get('/api/login/:nome', async (req, res) => {
 // Rota para Cadastro
 app.post('/api/cadastro', async (req, res) => {
     try {
-        // 1. Buscar CSRF Token + Cookie (OBRIGATÓRIO pro SAP)
-        const tokenRes = await axios.get(SAP_BASE_URL, {
+        // 1. Buscar CSRF Token + Cookie
+        const tokenRes = await axios.get(`${SAP_BASE_URL}/${ENTITY_SET}`, {
             headers: {
                 'Authorization': AUTH_HEADER,
                 'x-csrf-token': 'fetch',
@@ -60,12 +60,17 @@ app.post('/api/cadastro', async (req, res) => {
         const csrfToken = tokenRes.headers['x-csrf-token'];
         const sessionCookie = tokenRes.headers['set-cookie'];
 
-        // ⚠️ Garantir que o cookie está no formato certo
+        // Garantir cookie válido
         const cookie = Array.isArray(sessionCookie)
             ? sessionCookie.join(';')
             : sessionCookie;
 
-        // 2. Enviar cadastro pro SAP
+        // DEBUG (pode apagar depois)
+        console.log("TOKEN:", csrfToken);
+        console.log("COOKIE:", cookie);
+        console.log("BODY:", req.body);
+
+        // 2. Enviar cadastro
         const response = await axios.post(
             `${SAP_BASE_URL}/${ENTITY_SET}`,
             req.body,
@@ -73,7 +78,7 @@ app.post('/api/cadastro', async (req, res) => {
                 headers: {
                     'Authorization': AUTH_HEADER,
                     'x-csrf-token': csrfToken,
-                    'Cookie': cookie,
+                    'Cookie': cookie, // ✅ agora correto
                     'Content-Type': 'application/json',
                     'Accept': 'application/json',
                     'ngrok-skip-browser-warning': 'true'
@@ -81,13 +86,19 @@ app.post('/api/cadastro', async (req, res) => {
             }
         );
 
-        // 3. Retornar resposta
+        // 3. Retorno
         res.status(201).json(response.data.d);
 
     } catch (error) {
-        console.error("❌ Erro detalhado SAP:",
-            error.response ? error.response.data : error.message
-        );
+        console.error("❌ ERRO SAP COMPLETO:");
+        
+        if (error.response) {
+            console.error("STATUS:", error.response.status);
+            console.error("DATA:", error.response.data);
+            console.error("HEADERS:", error.response.headers);
+        } else {
+            console.error(error.message);
+        }
 
         res.status(500).json({
             error: error.response?.data || 'Erro ao cadastrar no SAP'
