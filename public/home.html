@@ -1,11 +1,80 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="pt-br">
 <head>
-	<meta charset="UTF-8">
-	<meta name="viewport" content="width=device-width, initial-scale=1.0">
-	<title>Document</title>
+    <meta charset="UTF-8">
+    <title>Home</title>
+
+    <style>
+        body {
+            margin: 0;
+            font-family: 'Segoe UI', sans-serif;
+            background: linear-gradient(135deg, #005a9e, #00aaff);
+            height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            color: white;
+        }
+
+        .card {
+            background: rgba(255,255,255,0.1);
+            backdrop-filter: blur(10px);
+            padding: 40px;
+            border-radius: 15px;
+            text-align: center;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+            width: 350px;
+        }
+
+        h1 {
+            margin-bottom: 10px;
+        }
+
+        p {
+            opacity: 0.8;
+        }
+
+        button {
+            margin-top: 20px;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 8px;
+            background: white;
+            color: #005a9e;
+            cursor: pointer;
+            font-weight: bold;
+        }
+
+        button:hover {
+            background: #ddd;
+        }
+    </style>
 </head>
 <body>
-	<h1>HOMEEE</h1>
+
+<div class="card">
+    <h1 id="titulo">Bem-vindo</h1>
+    <p id="info"></p>
+
+    <button onclick="logout()">Sair</button>
+</div>
+
+<script>
+    const user = JSON.parse(localStorage.getItem("usuario"));
+
+    if (!user) {
+        // 🔒 bloqueia acesso direto
+        window.location.href = "index.html";
+    } else {
+        document.getElementById("titulo").innerText = `Olá, ${user.Nome}!`;
+        document.getElementById("info").innerText = `Email: ${user.Email}`;
+    }
+
+    function logout() {
+        localStorage.removeItem("usuario");
+        window.location.href = "index.html";
+    }
+</script>
+
 </body>
 </html>
