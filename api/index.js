@@ -46,129 +46,51 @@ app.get('/api/login/:nome', async (req, res) => {
 }
 });
 // Rota para Cadastro
-// app.post('/api/cadastro', async (req, res) => {
-//     try {
-//        console.log("Tentando conectar ao SAP em:", SAP_BASE_URL);
-//         console.log("Usando Header:", AUTH_HEADER);
-
-//         // 1. BUSCAR O PRÓXIMO ID
-//         const buscaRes = await axios.get(`${SAP_BASE_URL}/${ENTITY_SET}?$format=json`, {
-//             headers: { 
-//                 'Authorization': AUTH_HEADER, 
-//                 'ngrok-skip-browser-warning': 'true' 
-//             }
-//         });
-//         const usuarios = buscaRes.data.d.results;
-//         let maiorId = 0;
-        
-//         if (usuarios.length > 0) {
-//             // Pega o maior ID da lista atual
-//             maiorId = Math.max(...usuarios.map(u => parseInt(u.Id)));
-//         }
-        
-//         const novoId = String(maiorId + 1).padStart(8, '0'); // Ex: "00000015"
-
-//         // 2. HANDSHAKE (Token e Cookies)
-//         const handshake = await axios.get(SAP_BASE_URL, {
-//             headers: {
-//                 'Authorization': AUTH_HEADER,
-//                 'x-csrf-token': 'fetch',
-//                 'ngrok-skip-browser-warning': 'true'
-//             }
-//         });
-
-//         const csrfToken = handshake.headers['x-csrf-token'];
-//         const cookies = handshake.headers['set-cookie'];
-//         // Limpeza dos cookies para evitar erro 500/403
-//         const cookiesLimpos = cookies ? cookies.map(c => c.split(';')[0]).join('; ') : '';
-
-//         // 3. PAYLOAD FINAL
-//         const payload = {
-//             Id: novoId, 
-//             Nome: req.body.Nome,
-//             Senha: req.body.Senha.substring(0, 8) // Garante que não passe de 8 caracteres
-//         };
-
-//         // 4. POST PARA O SAP
-//         const response = await axios.post(`${SAP_BASE_URL}/${ENTITY_SET}`, payload, {
-//             headers: {
-//                 'Authorization': AUTH_HEADER,
-//                 'x-csrf-token': csrfToken,
-//                 'Cookie': cookiesLimpos,
-//                 'Content-Type': 'application/json',
-//                 'Accept': 'application/json',
-//                 'X-Requested-With': 'XMLHttpRequest'
-//             }
-//         });
-
-//         res.status(201).json(response.data.d);
-
-//     } catch (error) {
-//         if (error.response) {
-//             console.error("ERRO SAP DETALHADO:", JSON.stringify(error.response.data));
-//         } else {
-//             console.error("ERRO CONEXÃO:", error.message);
-//         }
-//         res.status(500).json({ error: 'Erro ao gerar cadastro automático' });
-//     }
-// });
-
 app.post('/api/cadastro', async (req, res) => {
     try {
-        const headersComuns = {
-            'Authorization': AUTH_HEADER.trim(),
-            'ngrok-skip-browser-warning': 'true',
-            'Accept': 'application/json'
-        };
-
-        // 1. BUSCAR O PRÓXIMO ID (Usando EntitySet direto)
-        const buscaRes = await axios.get(`${SAP_BASE_URL}/${ENTITY_SET}?$format=json`, {
-            headers: headersComuns
-        });
-        
-        const usuarios = buscaRes.data.d.results;
-        const maiorId = usuarios.length > 0 ? Math.max(...usuarios.map(u => parseInt(u.ID || u.Id || 0))) : 0;
-        const novoId = String(maiorId + 1).padStart(8, '0');
-
-        // 2. HANDSHAKE (Token CSRF)
-        // DICA: Pedimos o token direto na EntitySet, é mais garantido no SAP
-        const handshake = await axios.get(`${SAP_BASE_URL}/${ENTITY_SET}?$top=1`, {
-            headers: { ...headersComuns, 'x-csrf-token': 'fetch' }
-        });
-
-        const csrfToken = handshake.headers['x-csrf-token'];
-        const cookies = handshake.headers['set-cookie'];
-        const cookiesLimpos = cookies ? cookies.map(c => c.split(';')[0]).join('; ') : '';
-
-        // 3. POST FINAL (Campos em Maiúsculo conforme SE11)
-        const payload = {
-            Id: novoId,    // 'I' maiúsculo, 'd' minúsculo
-            Nome: String(req.body.Nome), // 'N' maiúsculo, restante minúsculo
-            Senha: String(req.body.Senha).substring(0, 8) // 'S' maiúsculo, restante minúsculo
-        };
-        
-        console.log("Enviando Payload exato:", payload);
-
-        const response = await axios.post(`${SAP_BASE_URL}/${ENTITY_SET}`, payload, {
+        // 1. Buscar CSRF Token + Cookie (OBRIGATÓRIO pro SAP)
+        const tokenRes = await axios.get(SAP_BASE_URL, {
             headers: {
-                'Authorization': auth,
-                'x-csrf-token': csrfToken,
-                'Cookie': cookiesLimpos,
-                'Content-Type': 'application/json',
-                'Accept': 'application/json',
-                'X-Requested-With': 'XMLHttpRequest'
+                'Authorization': AUTH_HEADER,
+                'x-csrf-token': 'fetch',
+                'ngrok-skip-browser-warning': 'true'
             }
         });
+
+        const csrfToken = tokenRes.headers['x-csrf-token'];
+        const sessionCookie = tokenRes.headers['set-cookie'];
+
+        // ⚠️ Garantir que o cookie está no formato certo
+        const cookie = Array.isArray(sessionCookie)
+            ? sessionCookie.join(';')
+            : sessionCookie;
+
+        // 2. Enviar cadastro pro SAP
+        const response = await axios.post(
+            `${SAP_BASE_URL}/${ENTITY_SET}`,
+            req.body,
+            {
+                headers: {
+                    'Authorization': AUTH_HEADER,
+                    'x-csrf-token': csrfToken,
+                    'Cookie': cookie,
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/json',
+                    'ngrok-skip-browser-warning': 'true'
+                }
+            }
+        );
+
+        // 3. Retornar resposta
         res.status(201).json(response.data.d);
 
     } catch (error) {
-        // Esse log vai aparecer no Dashboard da Vercel
-        const detalhes = error.response ? JSON.stringify(error.response.data) : error.message;
-        console.error("ERRO CRÍTICO SAP:", detalhes);
-        
-        res.status(500).json({ 
-            error: "Falha na comunicação com SAP", 
-            detalhes: detalhes 
+        console.error("❌ Erro detalhado SAP:",
+            error.response ? error.response.data : error.message
+        );
+
+        res.status(500).json({
+            error: error.response?.data || 'Erro ao cadastrar no SAP'
         });
     }
 });
