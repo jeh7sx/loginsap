@@ -142,21 +142,23 @@ app.post('/api/cadastro', async (req, res) => {
 
         // 3. POST FINAL (Campos em Maiúsculo conforme SE11)
         const payload = {
-            ID: novoId,
-            NOME: String(req.body.Nome),
-            SENHA: String(req.body.Senha).substring(0, 8)
+            Id: novoId,    // 'I' maiúsculo, 'd' minúsculo
+            Nome: String(req.body.Nome), // 'N' maiúsculo, restante minúsculo
+            Senha: String(req.body.Senha).substring(0, 8) // 'S' maiúsculo, restante minúsculo
         };
+        
+        console.log("Enviando Payload exato:", payload);
 
         const response = await axios.post(`${SAP_BASE_URL}/${ENTITY_SET}`, payload, {
             headers: {
-                ...headersComuns,
+                'Authorization': auth,
                 'x-csrf-token': csrfToken,
                 'Cookie': cookiesLimpos,
                 'Content-Type': 'application/json',
+                'Accept': 'application/json',
                 'X-Requested-With': 'XMLHttpRequest'
             }
         });
-
         res.status(201).json(response.data.d);
 
     } catch (error) {
