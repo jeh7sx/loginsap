@@ -79,151 +79,166 @@
 
 <body>
 
-<div class="container">
+    <div class="container">
 
-    <!-- LOGIN -->
-    <div id="box-login">
-        <h2>Login</h2>
+        <div id="box-login">
+            <h2>Login</h2>
 
-        <input type="text" id="lLogin" placeholder="CPF ou Email">
-        <small>Digite seu CPF (somente números) ou email</small>
+            <input type="text" id="lLogin" placeholder="CPF ou Email">
+            <small>Digite seu CPF (somente números) ou email</small>
 
-        <input type="password" id="lPass" placeholder="Senha">
+            <input type="password" id="lPass" placeholder="Senha">
 
-        <button onclick="logar()">Entrar</button>
+            <button onclick="logar()">Entrar</button>
 
-        <div class="toggle" onclick="swap()">Criar conta</div>
+            <div class="toggle" onclick="swap()">Criar conta</div>
+        </div>
+
+        <div id="box-cad" class="hidden">
+            <h2>Cadastro</h2>
+
+            <input type="text" id="cCpf" placeholder="CPF">
+            <small>Somente números (11 dígitos)</small>
+
+            <input type="email" id="cEmail" placeholder="Email">
+            <small>Ex: seuemail@gmail.com</small>
+
+            <input type="text" id="cNome" placeholder="Nome completo">
+
+            <input type="password" id="cPass" placeholder="Senha">
+            <small>Mínimo 6 caracteres com maiúscula, minúscula, número e especial</small>
+
+            <button onclick="cadastrar()">Cadastrar</button>
+
+            <div class="toggle" onclick="swap()">Voltar para login</div>
+        </div>
+
+        <div id="msg"></div>
     </div>
 
-    <!-- CADASTRO -->
-    <div id="box-cad" class="hidden">
-        <h2>Cadastro</h2>
+    <script>
+        const msg = document.getElementById('msg');
 
-        <input type="text" id="cCpf" placeholder="CPF">
-        <small>Somente números (11 dígitos)</small>
-
-        <input type="email" id="cEmail" placeholder="Email">
-        <small>Ex: seuemail@gmail.com</small>
-
-        <input type="text" id="cNome" placeholder="Nome completo">
-
-        <input type="password" id="cPass" placeholder="Senha">
-        <small>Mínimo 6 caracteres com maiúscula, minúscula, número e especial</small>
-
-        <button onclick="cadastrar()">Cadastrar</button>
-
-        <div class="toggle" onclick="swap()">Voltar para login</div>
-    </div>
-
-    <div id="msg"></div>
-</div>
-
-<script>
-const msg = document.getElementById('msg');
-
-function swap() {
-    document.getElementById('box-login').classList.toggle('hidden');
-    document.getElementById('box-cad').classList.toggle('hidden');
-    msg.innerText = "";
-}
-
-// CPF somente números
-document.getElementById('cCpf').addEventListener('input', function (e) {
-    let valor = e.target.value.replace(/\D/g, '');
-    if (valor.length > 11) valor = valor.slice(0, 11);
-    e.target.value = valor;
-});
-
-function validarCadastro(cpf, email, nome, senha) {
-    if (!cpf || !email || !nome || !senha) return "Preencha todos os campos.";
-    if (cpf.length !== 11) return "CPF deve ter 11 números.";
-
-    const senhaRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[\W_]).{6,}$/;
-    if (!senhaRegex.test(senha)) {
-        return "Senha fraca.";
-    }
-
-    return null;
-}
-
-async function cadastrar() {
-    const cpf = cCpf.value;
-    const email = cEmail.value;
-    const nome = cNome.value;
-    const senha = cPass.value;
-
-    const erro = validarCadastro(cpf, email, nome, senha);
-
-    if (erro) {
-        msg.style.color = "red";
-        msg.innerText = erro;
-        return;
-    }
-
-    const payload = { Cpf: cpf, Email: email, Nome: nome, Senha: senha };
-
-    msg.style.color = "blue";
-    msg.innerText = "Cadastrando...";
-
-    try {
-        const res = await fetch('/api/cadastro', {
-            method: 'POST',
-            headers: {'Content-Type': 'application/json'},
-            body: JSON.stringify(payload)
-        });
-
-        const data = await res.json();
-
-        if (res.ok) {
-            alert("Cadastro realizado!");
-            swap();
-        } else {
-            msg.style.color = "red";
-            msg.innerText = data.error || "Erro ao cadastrar";
+        function swap() {
+            document.getElementById('box-login').classList.toggle('hidden');
+            document.getElementById('box-cad').classList.toggle('hidden');
+            msg.innerText = "";
         }
 
-    } catch {
-        msg.style.color = "red";
-        msg.innerText = "Erro na comunicação.";
-    }
-}
-
-async function logar() {
-    const login = lLogin.value;
-    const senha = lPass.value;
-
-    if (!login || !senha) {
-        msg.style.color = "red";
-        msg.innerText = "Preencha todos os campos.";
-        return;
-    }
-
-    msg.style.color = "blue";
-    msg.innerText = "Entrando...";
-
-    try {
-        const res = await fetch('/api/login', {
-            method: 'GET',
-            headers: {'Content-Type': 'application/json'},
-            body: JSON.stringify({ login, senha })
+        // CPF máscara (somente números)
+        document.getElementById('cCpf').addEventListener('input', function (e) {
+            let valor = e.target.value.replace(/\D/g, '');
+            if (valor.length > 11) valor = valor.slice(0, 11);
+            e.target.value = valor;
         });
 
-        const data = await res.json();
+        function validarCadastro(cpf, email, nome, senha) {
+            if (!cpf || !email || !nome || !senha) {
+                return "Preencha todos os campos.";
+            }
 
-        if (res.ok) {
-            localStorage.setItem("usuario", JSON.stringify(data));
-            window.location.href = "home.html";
-        } else {
-            msg.style.color = "red";
-            msg.innerText = data.error;
+            if (cpf.length !== 11) {
+                return "CPF deve ter 11 números.";
+            }
+
+            const senhaRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[\W_]).{6,}$/;
+
+            if (!senhaRegex.test(senha)) {
+                return "Senha fraca. Use maiúscula, minúscula, número e especial.";
+            }
+
+            return null;
         }
 
-    } catch {
-        msg.style.color = "red";
-        msg.innerText = "Erro na conexão.";
-    }
-}
-</script>
+        async function cadastrar() {
+            const cpf = document.getElementById('cCpf').value;
+            const email = document.getElementById('cEmail').value;
+            const nome = document.getElementById('cNome').value;
+            const senha = document.getElementById('cPass').value;
+
+            const erro = validarCadastro(cpf, email, nome, senha);
+
+            if (erro) {
+                msg.style.color = "red";
+                msg.innerText = erro;
+                return;
+            }
+
+            const payload = {
+                Cpf: cpf,
+                Email: email,
+                Nome: nome,
+                Senha: senha
+            };
+
+            msg.style.color = "blue";
+            msg.innerText = "Cadastrando...";
+
+            try {
+                const res = await fetch('/api/cadastro', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify(payload)
+                });
+
+                const data = await res.json();
+
+                if (res.ok) {
+                    alert("Cadastro realizado com sucesso!");
+                    swap();
+                } else {
+                    msg.style.color = "red";
+                    msg.innerText = data.error?.message?.value || JSON.stringify(data.error);
+                }
+
+            } catch {
+                msg.style.color = "red";
+                msg.innerText = "Erro na comunicação.";
+            }
+        }
+
+        async function logar() {
+            const login = document.getElementById('lLogin').value;
+            const senha = document.getElementById('lPass').value;
+
+            if (!login || !senha) {
+                msg.style.color = "red";
+                msg.innerText = "Preencha todos os campos.";
+                return;
+            }
+
+            msg.style.color = "blue";
+            msg.innerText = "Verificando...";
+
+            try {
+                const res = await fetch(`/api/login/${login}`);
+                const data = await res.json();
+
+                if (!res.ok) {
+                    msg.style.color = "red";
+                    msg.innerText = "Usuário não encontrado.";
+                    return;
+                }
+
+                if (data.Senha.trim() === senha.trim()) {
+                    msg.style.color = "green";
+                    msg.innerText = "Login realizado!";
+                
+                    // 💾 salva usuário
+                    localStorage.setItem("usuario", JSON.stringify(data));
+                
+                    window.location.href = "home.html";
+                } else {
+                    msg.style.color = "red";
+                    msg.innerText = "Senha incorreta.";
+                }
+
+            } catch {
+                msg.style.color = "red";
+                msg.innerText = "Erro na conexão.";
+            }
+        }
+    </script>
 
 </body>
 </html>
