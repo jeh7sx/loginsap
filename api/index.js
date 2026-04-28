@@ -9,7 +9,8 @@ app.use(express.static(path.join(__dirname, 'public')));
 // const SAP_BASE_URL = 'http://127.0.0.1:8000/sap/opu/odata/sap/ZLOGINTSTOD_SRV_01';
 const SAP_BASE_URL = 'https://undaunted-overhear-landmass.ngrok-free.dev/sap/opu/odata/sap/ZLOGINTSTOD_SRV_01';
 const ENTITY_SET = 'loginTstSet';
-const AUTH_HEADER = 'Basic ' + Buffer.from('developer:etecamp').toString('base64');
+// const AUTH_HEADER = 'Basic ' + Buffer.from('developer:etecamp').toString('base64');
+const AUTH_HEADER = 'Basic ZGV2ZWxvcGVyOmV0ZWNhbXA=';
 
 // Rota para Login (Busca por Nome)
 app.get('/api/login/:nome', async (req, res) => {
