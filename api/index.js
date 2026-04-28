@@ -1,115 +1,72 @@
 const express = require('express');
 const axios = require('axios');
 const path = require('path');
-const bcrypt = require('bcrypt');
 
 const app = express();
 app.use(express.json());
 app.use(express.static(path.join(__dirname, 'public')));
 
+// const SAP_BASE_URL = 'http://127.0.0.1:8000/sap/opu/odata/sap/ZLOGINTSTOD_SRV_01';
 const SAP_BASE_URL = 'https://undaunted-overhear-landmass.ngrok-free.dev/sap/opu/odata/sap/ZLOGINTSTOD_SRV_01';
 const ENTITY_SET = 'loginTstSet';
+// const AUTH_HEADER = 'Basic ' + Buffer.from('developer:etecamp').toString('base64');
 const AUTH_HEADER = 'Basic ZGV2ZWxvcGVyOmV0ZWNhbXA=';
 
-//
-// 🔐 LOGIN (SEGURO)
-//
-app.post('/api/login', async (req, res) => {
+// Rota para Login (Busca por Nome)
+app.get('/api/login/:login', async (req, res) => {
     try {
-        const { login, senha } = req.body;
+        const login = req.params.login.trim().toLowerCase();
 
-        if (!login || !senha) {
-            return res.status(400).json({ error: "Preencha todos os campos" });
-        }
+        const url = `${SAP_BASE_URL}/${ENTITY_SET}?$format=json`;
 
-        const response = await axios.get(
-            `${SAP_BASE_URL}/${ENTITY_SET}?$format=json`,
-            {
-                headers: {
-                    'Authorization': AUTH_HEADER,
-                    'ngrok-skip-browser-warning': 'true'
-                }
+        const response = await axios.get(url, {
+            headers: {
+                'Authorization': AUTH_HEADER,
+                'ngrok-skip-browser-warning': 'true'
             }
-        );
+        });
 
         const users = response.data.d.results;
 
-        const user = users.find(u =>
-            u.Cpf === login ||
-            u.Email?.toLowerCase() === login.toLowerCase()
-        );
+        const usuarioEncontrado = users.find(u => {
+            const cpf = u.Cpf?.trim();
+            const email = u.Email?.toLowerCase().trim();
 
-        if (!user) {
-            return res.status(404).json({ error: "Usuário não encontrado" });
+            return cpf === login || email === login;
+        });
+
+        if (usuarioEncontrado) {
+            res.json(usuarioEncontrado);
+        } else {
+            res.status(404).json({ error: 'Usuário não encontrado' });
         }
-
-        // 🔐 comparar senha criptografada
-        const senhaValida = await bcrypt.compare(senha, user.Senha);
-
-        if (!senhaValida) {
-            return res.status(401).json({ error: "Senha incorreta" });
-        }
-
-        // ❌ remover senha antes de enviar
-        delete user.Senha;
-
-        res.json(user);
 
     } catch (error) {
-        console.error("Erro login:", error.response?.data || error.message);
-        res.status(500).json({ error: "Erro interno no servidor" });
+        console.error("Erro login:", error.message);
+        res.status(500).json({ error: 'Erro interno no servidor' });
     }
 });
 
-//
-// 📝 CADASTRO
-//
+// Rota para Cadastro
 app.post('/api/cadastro', async (req, res) => {
     try {
-        const { Cpf, Email, Nome, Senha } = req.body;
-
-        if (!Cpf || !Email || !Nome || !Senha) {
-            return res.status(400).json({ error: "Preencha todos os campos" });
-        }
-
         // 1. Buscar usuários existentes
-        const listRes = await axios.get(
-            `${SAP_BASE_URL}/${ENTITY_SET}?$format=json`,
-            {
-                headers: {
-                    'Authorization': AUTH_HEADER,
-                    'ngrok-skip-browser-warning': 'true'
-                }
+        const listRes = await axios.get(`${SAP_BASE_URL}/${ENTITY_SET}?$format=json`, {
+            headers: {
+                'Authorization': AUTH_HEADER,
+                'ngrok-skip-browser-warning': 'true'
             }
-        );
+        });
 
         const users = listRes.data.d.results;
 
-        // 🔒 CPF único
-        const existeCpf = users.find(u => u.Cpf === Cpf);
-        if (existeCpf) {
+        const existe = users.find(u => u.Cpf === req.body.Cpf);
+
+        if (existe) {
             return res.status(400).json({ error: "CPF já cadastrado" });
         }
 
-        // 🔒 EMAIL único
-        const existeEmail = users.find(u =>
-            u.Email?.toLowerCase() === Email.toLowerCase()
-        );
-        if (existeEmail) {
-            return res.status(400).json({ error: "Email já cadastrado" });
-        }
-
-        // 🔐 criptografar senha
-        const senhaHash = await bcrypt.hash(Senha, 10);
-
-        const payload = {
-            Cpf,
-            Email,
-            Nome,
-            Senha: senhaHash
-        };
-
-        // 2. Buscar CSRF Token
+        // 2. Buscar CSRF Token + Cookie
         const tokenRes = await axios.get(`${SAP_BASE_URL}/${ENTITY_SET}`, {
             headers: {
                 'Authorization': AUTH_HEADER,
@@ -125,10 +82,10 @@ app.post('/api/cadastro', async (req, res) => {
             ? sessionCookie.join(';')
             : sessionCookie;
 
-        // 3. Enviar pro SAP
+        // 3. Enviar cadastro
         const response = await axios.post(
             `${SAP_BASE_URL}/${ENTITY_SET}`,
-            payload,
+            req.body,
             {
                 headers: {
                     'Authorization': AUTH_HEADER,
@@ -152,5 +109,5 @@ app.post('/api/cadastro', async (req, res) => {
     }
 });
 
-// app.listen(3000, () => console.log(`🚀 http://localhost:3000`));
+// app.listen(3000, () => console.log(🚀 Site em http://localhost:3000));
 module.exports = app;
